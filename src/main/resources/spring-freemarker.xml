@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="freemarkerConfig" class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+		<property name="templateLoaderPath" value="/WEB-INF/ftl/" />
+		<property name="freemarkerSettings">
+			<props>
+				<prop key="template_update_delay">1</prop>
+				<prop key="default_encoding">UTF-8</prop>
+				<prop key="locale">Zh_CN</prop>
+				
+				<!-- 格式化 -->
+				<prop key="number_format">0.######</prop>
+				
+				<!-- freemarker不支持true和false的输出 -->
+				<prop key="boolean_format">yes,no</prop>
+				
+				<!-- 去除多余的空格 -->
+				<prop key="whitespaceStripping">true</prop>
+			</props>
+		</property>
+		
+		<property name="freemarkerVariables">
+			<map>
+				<!-- key为自定义指令的名称，value为bean -->
+				<entry key="role" value-ref="roleDirective"></entry>
+			</map>
+		</property>
+	</bean>
+
+</beans>

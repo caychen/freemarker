@@ -1,0 +1,164 @@
+取值指令
+1、常用${var}语法进行取值，
+2、对null、不存在的对象取值${var!},这样就不会抛出异常，所以在取值的时候建议添加!
+	注意：如果user=null, 在${user.name!}的时候仍然会报错，!默认是检测最近的对象或者属性，所以可以添加()，即${(user.name)!}，检测全部对象和属性是否为空值
+3、取包装对象属性的值，使用点操作符，
+4、取值的时候，在${}内部进行计算和赋值
+5、Date类型格式:${date?string(pattern)}
+6、转义html内容:${var?html}
+
+freemarker不支持true和false的输出：
+	可以在配置文件中的freemarkerSettings中加入 <prop key="boolean_format">yes,no</prop>
+	或者在页面上输出boolean变量的时候，通过转换,如：${flag?string("true","no")}
+	
+	
+freemarker自定义函数
+	新建一个method类，实现TemplateMethodModelEx接口，重写exec方法，注意exec的参数就是自定义函数传过来的参数
+	java中的数据类型尽量为freemarker的数据类型，比如：
+		如果页面上是int数据，exec中要使用BigDecimal类型。
+	然后在controller层将自定义的函数名通过mv.addObject("自定义函数名",new 自定义函数类);
+	
+	在页面上使用：自定义函数名(参数...)
+		
+自定义指令
+	在使用处使用@开头
+	新建一个directive类，实现TemplateDirectiveModel接口，重写execute方法，使用@Component或者@Service注解
+	如：
+		@Override
+		public void execute(Environment env, Map params, TemplateModel[] loopVars, TemplateDirectiveBody body)
+				throws TemplateException, IOException {
+			// TODO Auto-generated method stub
+			TemplateScalarModel user = (TemplateScalarModel) params.get("user");
+			TemplateScalarModel role = (TemplateScalarModel) params.get("role");
+	
+			if ("123456".equals(user.getAsString()) && "admin".equals(role.getAsString())) {
+				loopVars[0] = TemplateBooleanModel.TRUE;
+	
+				List<String> otherRights = new ArrayList<String>();
+				otherRights.add("insert");
+				otherRights.add("update");
+				otherRights.add("delete");
+	
+				loopVars[1] = new SimpleSequence(otherRights, null);
+			} else {
+				loopVars[0] = TemplateBooleanModel.FALSE;
+				List<String> otherRights = new ArrayList<String>();
+				otherRights.add("select");
+	
+				loopVars[1] = new SimpleSequence(otherRights, null);
+			}
+	
+			body.render(env.getOut());
+		}
+		
+	在freemarker的配置文件中配置：
+		<property name="freemarkerVariables">
+			<map>
+				<!-- key为自定义指令的名称，value为bean -->
+				<entry key="role" value-ref="roleDirective"></entry>
+				<!-- <entry key="..." value-ref="..."></entry> -->
+			</map>
+		</property>
+		
+	在页面使用@作为自定义指令的前缀:
+		<@role user="123456" role="admin"; result1, result2>
+			<#if result1>
+				我是admin，
+			</#if>
+			我的权限是：
+			<#list result2 as item>
+				${item}
+			</#list>
+		</@role>
+		
+		<@role user="111" role="admin"; result1, result2>
+			<#if result1>
+				我是admin，
+			</#if>
+			我的权限是：
+			<#list result2 as item>
+				${item}
+			</#list>
+		</@role>
+		
+	分号前面是入参，多个入参以空格分开，对应指令类execute方法中的params键值对；
+	分号后面是出参，以逗号分开，对应指令类execute方法中的TemplateModel[]集合
+	
+内置函数：
+	字符串内置函数：
+		substring：截取
+		cap_first：首字母大写
+		ends_with：以...结束
+		contains：是否包含子串
+		date：把字符串转换为date类型
+		datetime：把字符串转换为datetime类型
+		time：把字符串转换为time类型
+		starts_with：以...开始
+		index_of：第一次出现的索引
+		last_index_of：最后一次出现的索引
+		split：分隔
+		trim：将首尾空格去掉
+	
+	数值内置函数：
+		string：
+		?string("0.##")：小数点后面保留N位
+		round：四舍五入
+		floor：下取整
+		ceiling：上取整
+		
+	List内置函数：
+		first：取第一个
+		last：取最后一个
+		seq_contains：序列是否包含
+		seq_index_of：首次出现的索引
+		size：长度
+		reverse：反转
+		sort：排序
+		sort_by：按照字段排序
+		chunk：分块。如chunk(4)表示的是每4个分为一组，是个集合
+			<#assign listVar=[1,2,3,4,11,12,13,14,21,22,23,24]/>
+			${listVar?chunk(4)?size}		
+			<#list listVar?chunk(4)?last as item> 去取最后一个[21,22,23,24]
+				${item}
+			</#list>
+	
+	is函数：
+		is_string：
+		is_number：
+		is_method：
+		has_content：同()一致
+		eval：求值
+		
+		
+宏指令macro,#nested为嵌套指令
+	格式：
+		<#macro name param1 param2 ... paramN>
+			...
+			<#nested loopvar1, loopvar2, ..., loopvarN>
+			...
+			<#return>
+			...
+		</#macro>
+		
+	调用：
+		<@name param1="" param2="" ... paramN=""; >
+		</@name>
+		
+	例如：定义repeat宏指令，有一个count入参，nested有三个出参，会返回给调用者分号后面的三个参数c,halfc,last
+		<#macro repeat count>
+			<#list 1..count as x>
+				<#nested x, x/2, x==count>
+			</#list>
+		</#macro>
+		<@repeat count=4 ; c, halfc, last>
+			${c}. ${halfc}<#if last> Last!</#if>
+		</@repeat>
+		
+function:
+	格式：
+		<#function function_name param1 param2 ... paramN>
+			<#return returnValue>
+		</#function>
+	调用：
+		${function_name(param1, param2, ...)}
+	

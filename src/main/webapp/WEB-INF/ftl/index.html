@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+
+	<h4>内置指令</h4>
+	<#if name??>
+		Welcome ${name}!
+	<#else>
+		Hello World!
+	</#if>
+	<br/>
+	
+	<!-- 使用!可以避免抛空值异常 -->
+	${aa!}<!-- aa变量不存在，直接不输出 -->
+	${aa!"默认值"}<!-- 也可以指定默认的值 -->
+	<br/>
+	${flag!}
+	<br/>
+	${desc!?html}<!-- 输出原始html内容 -->
+	
+	<br/>
+	<!-- 赋值 -->
+	<#assign age=10 />
+	${age!}
+	<br/>
+	
+	<!-- 遍历list -->
+	<table>
+		<thead>
+			<tr>
+				<td>ID</td>
+				<td>Name</td>
+				<td>Birthday</td>
+			</tr>
+		</thead>
+		<tbody>
+			<#list users as user>
+				<tr>
+					<td>${(user.id)!}</td>
+					<td>${(user.name)!}</td>
+					<td>${(user.birthday)!?string('yyyy-MM-dd')}</td>
+				</tr>
+			</#list>
+		</tbody>
+	</table>
+	
+	<!-- 遍历map -->
+	<ul>
+		<#list maps?keys as key>
+			<li>${key + " , " + maps[key]}</li>
+		</#list>
+	</ul>
+	
+	<br/>
+	<!-- if -->
+	<#if age == 15>
+		age = 15
+	</#if>
+	<br/>
+	
+	<!-- if/else -->
+	<#if age == 15>
+		age = 15
+	<#else>
+		age != 15
+	</#if>
+	
+	<!-- if/elseif/else-->
+	<br/>
+	<#if age &gt; 12>
+		age > 12
+	<#elseif age &gt; 9>
+		age > 9 && age <= 12
+	<#else>
+		age <= 9
+	</#if>
+	
+	<br/>
+	
+	<hr/>
+	<#list 1..9 as n>
+		#{n}
+	</#list>
+	<hr/>
+	<!-- 在遍历的时候可以先判断集合是否存在 -->
+	<#if list??><!-- 第二个?同exists一样，可以互换 -->
+		<#list list as l>
+			${l.name}
+		</#list>
+	</#if>
+	
+	<br/>
+	<!-- if中添加多个逻辑判断符&&,||,! -->
+	<#if (age &gt; 18) || (age &lt; 14)>
+		青少年
+	</#if>
+	<br/>
+	
+	<#assign var = 1000 />
+	<!-- switch，支持整型，也支持字符串 -->
+	<#switch var>
+		<#case 1>
+			var=1
+		<#break>
+		<#case 10>
+			var=10
+		<#break>
+		<#case 100>
+			var=100
+		<#break>
+		<#case 1000>
+		<#case 10000>
+			var=1000 or var=10000
+		<#break>
+		<#default>
+			var=undefined
+		<#break>
+	</#switch>
+	<hr/>
+	
+	<!-- 内置字符串函数 -->
+	<#assign a="heLlo"/>
+	<#assign b="wOrlD"/>
+	连接+：${a + b}<br/>
+	长度length：${(a + b)?length}<br/>
+	截取substring：${(a + b)?substring(5,8)}<br/>
+	大写upper_case：${(a + b)?upper_case}<br/>
+	小写lower_case：${(a + b)?lower_case}<br/>
+	索引index_of：${(a + b)?index_of('l')}<br/>
+	索引last_index_of：${(a + b)?last_index_of('l')}<br/>
+	替换replace：${(a + b)?replace('w','c')}<br/>
+	分割split：
+		<#list (a + b)?split('l') as l>
+			${l},
+		</#list>
+	<br/>
+	<hr/>
+	
+	<!-- 自定义函数 -->
+	<h4>自定义函数</h4>
+	<#assign myIntlist = [2,3,5,1,7,4,9,0,8] />
+	<h4>未排序之前</h4>
+	<#list myIntlist as item>
+		${item}
+	</#list>
+	
+	<h4>排序之后</h4>
+	<#list myIntlist as item>
+		${item}
+	</#list>
+	<hr/>
+	<#assign myStringList = ["abc","agd","gea","afda","egz"] />
+	<h4>未排序之前</h4>
+	<#list myStringList as str>
+		${str}
+	</#list>
+	
+	<h4>排序之后</h4>
+	<#list sort_string(myStringList) as str>
+		${str}
+	</#list>
+	
+	<!-- freemarker自带sort函数 -->
+	<!-- _index表示的是num的下标属性 -->
+	<h4>升序</h4>
+	<#list myIntlist?sort as num>
+		${num_index}:${num}<br/>
+	</#list>
+	
+	<h4>降序</h4>
+	<#list myIntlist?sort?reverse as num>
+		${num_index}:${num}<br/>
+	</#list>
+	
+	<!-- 自定义指令 -->
+	<h4>自定义指令</h4>
+	<!-- 分号前面是入参，多个入参以空格分开，对应指令类里的params键值对；分号后面是出参，以逗号分开，对应指令类方法中的TemplateModel[]集合 -->
+	<@role user="123456" role="admin"; result1, result2>
+		<#if result1>
+			我是admin，
+		</#if>
+		我的权限是：
+		<#list result2 as item>
+			${item}
+		</#list>
+	</@role>
+	
+	<@role user="111" role="admin"; result1, result2>
+		<#if result1>
+			我是admin，
+		</#if>
+		我的权限是：
+		<#list result2 as item>
+			${item}
+		</#list>
+	</@role>
+	
+	<hr />
+	
+	<h4>无参数的macro</h4>
+	<#macro test1>
+		无参数的macro
+	</#macro>
+	<@test1/>
+	
+	<hr/>
+	<h4>有参数的macro</h4>
+	<#macro test2 param1 param2>
+		有参数的macro，分别为：${param1}, ${param2}
+	</#macro>
+	
+	<@test2 param1=11 param2="123">
+	</@test2>
+	<hr/>
+	
+	<h4>有默认参数的macro</h4>
+	<#macro test3 param1 param2="python">
+		有默认参数的macro，分别为：${param1}, ${param2}
+	</#macro>
+	
+	<@test3 param1=11 /><br/>
+	<@test3 param1="apple" param2="java" />
+	
+	<h4>有多个参数的macro</h4>
+	<#macro test4 param1 param2="python" params...><!-- 最后一个参数以map的形式存值 -->
+		有多个参数的macro，分别为：${param1}, ${param2}<br/>
+		最后的params为${params['param3']}, ${params['param4']}
+	</#macro>
+	<@test4 param1="php" param2="java" param3="c++" param4="android"/>
+	
+	<hr/>
+	<h4>函数</h4>
+	<#function doAdd param1 param2>
+		<#return param1 + param2>
+	</#function>
+	
+	100+200=${doAdd(100,200)}
+	
+	
+</body>
+</html>
